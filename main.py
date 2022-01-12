@@ -1,5 +1,8 @@
 import pgzrun
+import cv2 as cv
+import numpy as np
 import pyautogui
+import matplotlib.pyplot as plt
 from random import randint
 
 HEIGHT = 600
@@ -131,13 +134,56 @@ with open("Wall.txt","r") as file5:
 
 def update_time_left():
     global time,gameover
+
+    def templatematching():
+        image = pyautogui.screenshot()
+        plt.imshow(image)
+        
+        img_rgb = cv.imread(image)
+        img_gray = cv.cvtColor(img_rgb, cv.COLOR_BGR2GRAY)
+        template = cv.imread('tank_red.png',0)
+        template2 = cv.imread('tank_dark.png',0)
+        template3 = cv.imread('tank_green.png',0)
+        template4 = cv.imread('tank_sand.png',0)
+        w, h = template.shape[::-1]
+        a,b = template2.shape[::-1]
+        c,d = template3.shape[::-1]
+        e,f = template4.shape[::-1]
+
+        for i in range(len(enemies)):
+            res = cv.matchTemplate(img_gray,template,cv.TM_CCOEFF_NORMED)
+            threshold = 0.8
+            loc = np.where( res >= threshold)
+
+        return image
+
+    for i in enemies:
+        if len(enemies)!= 0:
+            if i.x > tank.x:
+                tank.x += speed
+                create_new_bullet()
+            elif i.x < tank.x:
+                tank.x -= speed
+                create_new_bullet()
+            else:
+                create_new_bullet()
+
+            if Gameover == False:
+                moveleftorright = randint(1,2)
+                if moveleftorright == 1:
+                    i.x += speed
+                elif moveleftorright == 2:
+                    i.x -= speed
+
+
     if time:
         time += 1
-    if time % 3 == 0:
+    if time % 3 == 0 and len(enemies) < 20:
         create_dark()
         create_green()
         create_dark()
         create_sand()
+
 
 def on_mouse_move(pos):
     Click.pos = pos
@@ -305,9 +351,13 @@ def check_bullet_collision():
     for bullet in bullets:
         for enemy in enemies:
             if bullet.colliderect(enemy):
-                bullets.remove(bullet)
+                try:
+                    bullets.remove(bullet)
+                except:
+                    pass
                 enemies.remove(enemy)
                 score += 1
+                
 
     for bullet in bullets:
         if bullet.bottom < 0:
@@ -323,8 +373,9 @@ def check_bullet_collision():
                 Gameover = True
 
     for enemybullet in enemybullets:
-        if enemybullet.bottom < 0:
+        if enemybullet.bottom > HEIGHT:
             enemybullets.remove(enemybullet)
+
 
 def on_key_down():
     global Gameover
@@ -433,6 +484,5 @@ if Gameover == False:
     clock.schedule_interval(create_sand_bullet, 3.0)
     clock.schedule_interval(create_green_bullet, 3.0)
     clock.schedule_interval(create_red_bullet, 3.0)
-
 
 pgzrun.go()
